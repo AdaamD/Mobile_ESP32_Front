@@ -4,8 +4,7 @@ import 'widgets/led_control.dart';
 import 'models/sensor_data.dart';
 import '../colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-// Importation du service API
-import 'services/sensor_service.dart'; // Assurez-vous que ce chemin est correct
+import 'services/sensor_service.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -13,129 +12,237 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  SensorData sensorData = SensorData(temperature: 22.5, light: 300);
-  final SensorService sensorService =
-      SensorService(); // Instance du service API
+  final SensorService sensorService = SensorService();
+  Future<SensorData>? _sensorDataFuture;
+  bool useStaticData = true; // Mettre à false pour utiliser l'API
 
   @override
   void initState() {
     super.initState();
-    // fetchSensorData(); // Décommenter pour récupérer les données de l'API
+    _refreshSensorData();
   }
 
-  Future<void> fetchSensorData() async {
-    try {
-      // Récupération des données de l'API
-      SensorData data = await sensorService.fetchSensorData();
-      setState(() {
-        sensorData = data; // Mise à jour des données avec celles récupérées
-      });
-    } catch (e) {
-      print('Erreur lors de la récupération des données : $e');
-      // Gestion des erreurs ici (afficher un message, etc.)
-    }
-  }
-
-  void controlLED(String state) {
-    print('LED $state');
+  Future<void> _refreshSensorData() async {
     setState(() {
-      sensorData = SensorData(
-        temperature: sensorData.temperature + (state == 'on' ? 1 : -1),
-        light: sensorData.light,
-      );
+      if (useStaticData) {
+        _sensorDataFuture =
+            Future.value(SensorData(temperature: 22.5, light: 300));
+      } else {
+        _sensorDataFuture = sensorService.fetchSensorData();
+      }
+      // Uncomment to use API
+      // _sensorDataFuture = sensorService.fetchSensorData();
     });
   }
 
-  void sendMessage(String message) {
-    print('Message envoyé: $message');
+  Future<void> controlLED(String state) async {
+    try {
+      await sensorService.controlLED(state);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('LED $state avec succès')),
+      );
+      _refreshSensorData(); // Rafraîchir les données après le changement
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors du contrôle de la LED: $e')),
+      );
+    }
+  }
+
+  Future<void> sendMessage(String message) async {
+    try {
+      await sensorService.sendMessage(message);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Message envoyé avec succès')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors de l\'envoi du message: $e')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child:
-                  SensorDisplay(sensorData: sensorData), // Affichage du cadran
+      body: RefreshIndicator(
+        onRefresh: _refreshSensorData,
+        child: CustomScrollView(
+          slivers: <Widget>[
+            SliverAppBar(
+              expandedHeight: 200.0,
+              floating: false,
+              pinned: true,
+              flexibleSpace: FlexibleSpaceBar(
+                title: Text(
+                  'Surveillance de Serre',
+                  style: TextStyle(
+                    color: const Color.fromARGB(236, 255, 255, 255),
+                    shadows: [
+                      Shadow(
+                        offset: Offset(2.0, 2.0),
+                        blurRadius: 3.0,
+                        color: Color.fromARGB(150, 0, 0, 0),
+                      ),
+                    ],
+                  ),
+                ),
+                background: Image.asset(
+                  'assets/images/semi-greenhouse.png',
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
-            SizedBox(height: 400), // Espace entre le cadran et les contrôles
-            Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              color: AppColors.secondaryColor.withOpacity(0.9),
+            SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'Contrôle de la LED',
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Column(
-                          children: [
-                            SvgPicture.asset('assets/images/lightbulb_on.svg',
-                                height: 50),
-                            SizedBox(height: 10),
-                            ElevatedButton(
-                              onPressed: () => controlLED('on'),
-                              child: Text('Allumer LED'),
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.accentColor),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          children: [
-                            SvgPicture.asset('assets/images/lightbulb_off.svg',
-                                height: 50),
-                            SizedBox(height: 10),
-                            ElevatedButton(
-                              onPressed: () => controlLED('off'),
-                              child: Text('Éteindre LED'),
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.accentColor),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                    _buildSensorDataCard(),
                     SizedBox(height: 20),
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Entrez un message',
-                        border: OutlineInputBorder(),
-                        focusedBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(color: AppColors.accentColor)),
-                        enabledBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(color: AppColors.accentColor)),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: () => sendMessage(
-                          'Votre message ici'), // Remplacez par la logique d'envoi
-                      child: Text('Envoyer Message'),
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              AppColors.accentColor), // Couleur du bouton
-                    ),
+                    _buildLEDControlCard(),
+                    SizedBox(height: 20),
+                    _buildMessageCard(),
                   ],
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSensorDataCard() {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text('Données du capteur',
+                style: Theme.of(context).textTheme.titleLarge),
+            SizedBox(height: 16),
+            FutureBuilder<SensorData>(
+              future: useStaticData
+                  ? Future.value(SensorData(temperature: 22.5, light: 300))
+                  : _sensorDataFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Erreur: ${snapshot.error}'));
+                } else if (snapshot.hasData) {
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildSensorInfo(Icons.thermostat,
+                          '${snapshot.data!.temperature}°C', 'Température'),
+                      _buildSensorInfo(Icons.wb_sunny,
+                          '${snapshot.data!.light} lux', 'Luminosité'),
+                    ],
+                  );
+                } else {
+                  return Text('Aucune donnée disponible');
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSensorInfo(IconData icon, String value, String label) {
+    return Column(
+      children: [
+        Icon(icon, size: 40, color: AppColors.accentColor),
+        Text(value,
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        Text(label),
+      ],
+    );
+  }
+
+  Widget _buildLEDControlCard() {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text('Contrôle de la LED',
+                style: Theme.of(context).textTheme.headlineSmall),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildLEDControl('On', Icons.lightbulb, () => controlLED('on'),
+                    Colors.yellow),
+                _buildLEDControl('Off', Icons.lightbulb_outline,
+                    () => controlLED('off'), Colors.grey),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLEDControl(
+      String label, IconData icon, VoidCallback onPressed, Color color) {
+    return Column(
+      children: [
+        ElevatedButton(
+          onPressed: onPressed,
+          child: Icon(icon, size: 30),
+          style: ElevatedButton.styleFrom(
+            shape: CircleBorder(),
+            padding: EdgeInsets.all(20),
+            backgroundColor: color,
+          ),
+        ),
+        SizedBox(height: 8),
+        Text(label),
+      ],
+    );
+  }
+
+  Widget _buildMessageCard() {
+    final TextEditingController _messageController = TextEditingController();
+
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text('Envoyer un message',
+                style: Theme.of(context).textTheme.titleLarge),
+            SizedBox(height: 16),
+            TextField(
+              controller: _messageController,
+              decoration: InputDecoration(
+                labelText: 'Entrez un message',
+                border: OutlineInputBorder(),
+                focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.accentColor)),
+                enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.accentColor)),
+              ),
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                if (_messageController.text.isNotEmpty) {
+                  sendMessage(_messageController.text);
+                  _messageController.clear();
+                }
+              },
+              child: Text('Envoyer Message'),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accentColor),
             ),
           ],
         ),
