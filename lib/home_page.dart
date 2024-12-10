@@ -5,6 +5,7 @@ import 'models/sensor_data.dart';
 import '../colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'services/sensor_service.dart';
+import 'dart:async';
 
 class HomePage extends StatefulWidget {
   @override
@@ -13,26 +14,31 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final SensorService sensorService = SensorService();
-  Future<SensorData>? _sensorDataFuture;
-  bool useStaticData = true; // Mettre à false pour utiliser l'API
+  late Future<SensorData> _sensorDataFuture;
+  Timer? _timer; // Déclarez une variable pour le Timer
 
   @override
   void initState() {
     super.initState();
-    _refreshSensorData();
+    _refreshSensorData(); // Récupérer les données au démarrage
+
+    // Initialisez le Timer pour actualiser les données toutes les 10 secondes
+    _timer = Timer.periodic(Duration(seconds: 10), (Timer timer) {
+      _refreshSensorData();
+    });
   }
 
   Future<void> _refreshSensorData() async {
     setState(() {
-      if (useStaticData) {
-        _sensorDataFuture =
-            Future.value(SensorData(temperature: 22.5, light: 300));
-      } else {
-        _sensorDataFuture = sensorService.fetchSensorData();
-      }
-      // Uncomment to use API
-      // _sensorDataFuture = sensorService.fetchSensorData();
+      _sensorDataFuture = sensorService
+          .fetchSensorData(); // Appel API pour récupérer les données
     });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel(); // Annulez le Timer lorsque l'état est détruit
+    super.dispose();
   }
 
   Future<void> controlLED(String state) async {
@@ -125,9 +131,7 @@ class _HomePageState extends State<HomePage> {
                 style: Theme.of(context).textTheme.titleLarge),
             SizedBox(height: 16),
             FutureBuilder<SensorData>(
-              future: useStaticData
-                  ? Future.value(SensorData(temperature: 22.5, light: 300))
-                  : _sensorDataFuture,
+              future: _sensorDataFuture, // Utilisation des données récupérées
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
@@ -214,22 +218,44 @@ class _HomePageState extends State<HomePage> {
 
     return Card(
       elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10), // Coins arrondis
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Envoyer un message',
-                style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'Envoyer un message',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.accentColor, // Couleur personnalisée
+                  ),
+            ),
             SizedBox(height: 16),
             TextField(
               controller: _messageController,
               decoration: InputDecoration(
                 labelText: 'Entrez un message',
-                border: OutlineInputBorder(),
+                labelStyle:
+                    TextStyle(color: AppColors.accentColor), // Couleur du label
+                prefixIcon: Icon(Icons.message,
+                    color: AppColors.accentColor), // Icône dans le champ
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10), // Coins arrondis
+                  borderSide: BorderSide(color: AppColors.accentColor),
+                ),
                 focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.accentColor)),
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide:
+                      BorderSide(color: AppColors.accentColor, width: 2),
+                ),
                 enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.accentColor)),
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide:
+                      BorderSide(color: AppColors.accentColor, width: 1),
+                ),
               ),
             ),
             SizedBox(height: 10),
@@ -242,7 +268,12 @@ class _HomePageState extends State<HomePage> {
               },
               child: Text('Envoyer Message'),
               style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accentColor),
+                backgroundColor: AppColors.accentColor, // Couleur du bouton
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10), // Coins arrondis
+                ),
+                padding: EdgeInsets.symmetric(vertical: 15), // Padding vertical
+              ),
             ),
           ],
         ),
