@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'widgets/sensor_display.dart';
 import 'widgets/led_control.dart';
 import 'models/sensor_data.dart';
+import 'statistics_page.dart';
 import '../colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'services/sensor_service.dart';
@@ -121,12 +122,24 @@ class _HomePageState extends State<HomePage> {
                             await sensorService.testFirestoreConnection();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                              content: Text(isConnected
-                                  ? 'Connecté à Firestore'
-                                  : 'Échec de connexion à Firestore')),
+                            content: Text(isConnected
+                                ? 'Connecté à Firestore'
+                                : 'Échec de connexion à Firestore'),
+                          ),
                         );
                       },
                       child: Text('Tester la connexion Firestore'),
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => StatisticsPage()),
+                        );
+                      },
+                      child: Text('Voir les Statistiques'),
                     ),
                   ],
                 ),
