@@ -29,10 +29,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _refreshSensorData() async {
-    setState(() {
-      _sensorDataFuture = sensorService
-          .fetchSensorData(); // Appel API pour récupérer les données
-    });
+    try {
+      final sensorData = await sensorService.fetchSensorData();
+      setState(() {
+        _sensorDataFuture = Future.value(sensorData);
+      });
+    } catch (e) {
+      print('Erreur lors de la récupération des données : $e');
+      // Gérez l'erreur ici si nécessaire
+    }
   }
 
   @override
@@ -110,6 +115,19 @@ class _HomePageState extends State<HomePage> {
                     _buildLEDControlCard(),
                     SizedBox(height: 20),
                     _buildMessageCard(),
+                    ElevatedButton(
+                      onPressed: () async {
+                        bool isConnected =
+                            await sensorService.testFirestoreConnection();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(isConnected
+                                  ? 'Connecté à Firestore'
+                                  : 'Échec de connexion à Firestore')),
+                        );
+                      },
+                      child: Text('Tester la connexion Firestore'),
+                    ),
                   ],
                 ),
               ),
