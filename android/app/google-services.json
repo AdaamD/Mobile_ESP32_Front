@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "444126053400",
-    "project_id": "esp32-flutter-app-7b535",
-    "storage_bucket": "esp32-flutter-app-7b535.firebasestorage.app"
+    "project_number": "277969285329",
+    "project_id": "flutter-esp32-app-4f71a",
+    "storage_bucket": "flutter-esp32-app-4f71a.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:444126053400:android:0b4ba6eee48eb34d06af6d",
+        "mobilesdk_app_id": "1:277969285329:android:d4a9d11888e9eea22055f0",
         "android_client_info": {
           "package_name": "com.example.flutter_esp32_application"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDHQOZi4BcmWjsFe9aw2f2n-1dl5Unp4SI"
+          "current_key": "AIzaSyDU5307Cdxq1ilb46Lg9qRQ5ylvIXNG5_M"
         }
       ],
       "services": {
@@ -26,7 +26,7 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:444126053400:android:607d14e94339863706af6d",
+        "mobilesdk_app_id": "1:277969285329:android:f224d9d44fc012562055f0",
         "android_client_info": {
           "package_name": "com.exemple.flutter_esp32"
         }
@@ -34,7 +34,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDHQOZi4BcmWjsFe9aw2f2n-1dl5Unp4SI"
+          "current_key": "AIzaSyDU5307Cdxq1ilb46Lg9qRQ5ylvIXNG5_M"
         }
       ],
       "services": {
