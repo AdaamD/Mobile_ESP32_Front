@@ -14,57 +14,34 @@ class _StatisticsPageState extends State<StatisticsPage> {
   double _averageTemperature = 0.0;
   double _averageLight = 0.0;
   Timer? _timer; // Déclarez une variable pour le Timer
-  final TextEditingController _thresholdController = TextEditingController();
 
   // Normes pour la serre
   final double minTemperature = 10.0;
   final double maxTemperature = 30.0;
+
   double minLight = 250.0;
   double maxLight = 800.0;
 
-  Future<void> _fetchLightThreshold() async {
-    try {
-      final sensorService = SensorService();
-      final threshold = await sensorService.getLightThreshold();
-      setState(() {
-        minLight = threshold * 0.8; // Par exemple, 80% du seuil
-        maxLight = threshold * 1.2; // Par exemple, 120% du seuil
-      });
-    } catch (e) {
-      print('Erreur lors de la récupération du seuil de lumière : $e');
-    }
+  Future<void> getLightThreshold() async {
+    double lightThreshold = await SensorService().fetchLightThreshold();
+    //debugPrint("AAAAAA $lightThreshold");
+
+    setState(() {
+      minLight = lightThreshold * 0.8; // 20% below the threshold
+      maxLight = lightThreshold * 1.2; // 20% above the threshold
+    });
   }
 
   @override
   void initState() {
     super.initState();
     _fetchRecentTemperatureData();
+    getLightThreshold();
+
     // Démarrez le timer pour actualiser les données toutes les 10 secondes
     _timer = Timer.periodic(Duration(seconds: 10), (Timer timer) {
       _fetchRecentTemperatureData();
     });
-  }
-
-// Mettre à jour le seuil de lumière
-  Future<void> _updateLightThreshold() async {
-    final int newThreshold = int.tryParse(_thresholdController.text) ?? 0;
-    if (newThreshold >= 0 && newThreshold <= 4095) {
-      try {
-        final sensorService = SensorService();
-        await sensorService.updateLightThreshold(newThreshold.toDouble());
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Seuil de lumière mis à jour avec succès')),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e')),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Valeur de seuil invalide (0-4095)')),
-      );
-    }
   }
 
   Future<void> _fetchRecentTemperatureData() async {
@@ -101,6 +78,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
             _showAlertDialog('Alerte Température',
                 'La température est hors limites : ${_averageTemperature.round()} °C');
           }
+          getLightThreshold();
           if (_averageLight < minLight || _averageLight > maxLight) {
             _showAlertDialog('Alerte Lumière',
                 'La lumière est hors limites : ${_averageLight.round()} lux');
@@ -113,8 +91,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   void _showAlertDialog(String title, String message) {
-    /* A REMTTRE  C EN COMMENTAIRE POUR PAS GENER LE DEVELOPPEMENT*/
-    /*
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -138,7 +114,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
         );
       },
     );
-    */
   }
 
   @override
@@ -161,6 +136,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   Color getLightColor(double light) {
+    getLightThreshold();
     if (light < minLight || light > maxLight) {
       return Colors.red; // Hors limites
     } else if (light >= minLight && light <= maxLight) {
@@ -225,25 +201,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
             ),
             SizedBox(height: 20),
             Text(
-              'Mise à jour du seuil de lumière',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: _thresholdController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Nouveau seuil de lumière',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _updateLightThreshold,
-              child: Text('Mettre à jour le seuil'),
-            ),
-            SizedBox(height: 50), // Ajout d'un espacement supplémentaire
-            Text(
               'Données Collectées',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
@@ -251,6 +208,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
             Expanded(
               child: ListView.builder(
                 itemCount: _temperatureData.length,
+                reverse: true, // Ajoutez cette ligne pour inverser l'ordre
                 itemBuilder: (context, index) {
                   final data = _temperatureData[index];
                   return Card(

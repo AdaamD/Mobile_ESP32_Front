@@ -113,22 +113,8 @@ class _HomePageState extends State<HomePage> {
                     _buildLEDControlCard(),
                     SizedBox(height: 20),
                     _buildMessageCard(),
-                    ElevatedButton(
-                      onPressed: () async {
-                        bool isConnected =
-                            await sensorService.testFirestoreConnection();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(isConnected
-                                ? 'Connecté à Firestore'
-                                : 'Échec de connexion à Firestore'),
-                          ),
-                        );
-                      },
-                      child: Text('Tester la connexion Firestore'),
-                    ),
                     SizedBox(height: 20),
-                    ElevatedButton(
+                    ElevatedButton.icon(
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -136,7 +122,19 @@ class _HomePageState extends State<HomePage> {
                               builder: (context) => StatisticsPage()),
                         );
                       },
-                      child: Text('Voir les Statistiques'),
+                      icon: Icon(Icons.bar_chart, color: Colors.white),
+                      label: Text('Accéder aux Statistiques Détaillées'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accentColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 15),
+                        textStyle: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -144,6 +142,21 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          bool isConnected = await sensorService.testFirestoreConnection();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(isConnected
+                  ? 'Connecté à Firestore'
+                  : 'Échec de connexion à Firestore'),
+            ),
+          );
+        },
+        child: Icon(Icons.cloud_done),
+        backgroundColor: AppColors.accentColor,
+        mini: true,
       ),
     );
   }
