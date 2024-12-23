@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_esp32_application/services/sensor_service.dart';
 import 'package:intl/intl.dart';
 import 'dart:async'; // Importer dart:async pour utiliser Timer
 
@@ -13,12 +14,26 @@ class _StatisticsPageState extends State<StatisticsPage> {
   double _averageTemperature = 0.0;
   double _averageLight = 0.0;
   Timer? _timer; // Déclarez une variable pour le Timer
+  final TextEditingController _thresholdController = TextEditingController();
 
   // Normes pour la serre
   final double minTemperature = 10.0;
   final double maxTemperature = 30.0;
-  final double minLight = 250.0;
-  final double maxLight = 800.0;
+  double minLight = 250.0;
+  double maxLight = 800.0;
+
+  Future<void> _fetchLightThreshold() async {
+    try {
+      final sensorService = SensorService();
+      final threshold = await sensorService.getLightThreshold();
+      setState(() {
+        minLight = threshold * 0.8; // Par exemple, 80% du seuil
+        maxLight = threshold * 1.2; // Par exemple, 120% du seuil
+      });
+    } catch (e) {
+      print('Erreur lors de la récupération du seuil de lumière : $e');
+    }
+  }
 
   @override
   void initState() {
@@ -28,6 +43,28 @@ class _StatisticsPageState extends State<StatisticsPage> {
     _timer = Timer.periodic(Duration(seconds: 10), (Timer timer) {
       _fetchRecentTemperatureData();
     });
+  }
+
+// Mettre à jour le seuil de lumière
+  Future<void> _updateLightThreshold() async {
+    final int newThreshold = int.tryParse(_thresholdController.text) ?? 0;
+    if (newThreshold >= 0 && newThreshold <= 4095) {
+      try {
+        final sensorService = SensorService();
+        await sensorService.updateLightThreshold(newThreshold.toDouble());
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Seuil de lumière mis à jour avec succès')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Valeur de seuil invalide (0-4095)')),
+      );
+    }
   }
 
   Future<void> _fetchRecentTemperatureData() async {
@@ -76,6 +113,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   void _showAlertDialog(String title, String message) {
+    /* A REMTTRE  C EN COMMENTAIRE POUR PAS GENER LE DEVELOPPEMENT*/
+    /*
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -99,6 +138,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
         );
       },
     );
+    */
   }
 
   @override
@@ -182,6 +222,25 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   color: getLightColor(_averageLight),
                 ),
               ],
+            ),
+            SizedBox(height: 20),
+            Text(
+              'Mise à jour du seuil de lumière',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: _thresholdController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Nouveau seuil de lumière',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _updateLightThreshold,
+              child: Text('Mettre à jour le seuil'),
             ),
             SizedBox(height: 50), // Ajout d'un espacement supplémentaire
             Text(

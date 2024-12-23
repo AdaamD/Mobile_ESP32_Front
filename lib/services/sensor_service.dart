@@ -5,6 +5,8 @@ import '../config/app_config.dart'; // Importez le fichier de configuration
 import '../models/sensor_data.dart';
 
 class SensorService {
+  double _lightThreshold = 1000.0; // Valeur par défaut
+
 // Acutalise les données des capteurs
   Future<SensorData> fetchSensorData() async {
     final response = await http.get(Uri.parse('${AppConfig.apiUrl}/sensors'));
@@ -58,6 +60,39 @@ class SensorService {
       print('Erreur lors du test Firestore : $e');
       return false;
     }
+  }
+
+  // Requete pour changer le seuil de luminosité
+  Future<void> updateLightThreshold(double newThreshold) async {
+    final url = Uri.parse('${AppConfig.apiUrl}/updateThreshold');
+    try {
+      final response = await http.post(
+        url,
+        body: {'threshold': newThreshold.toString()},
+      );
+      if (response.statusCode == 200) {
+        _lightThreshold = newThreshold; // Mettre à jour le seuil en mémoire
+      } else {
+        throw Exception(
+            'Erreur lors de la mise à jour du seuil : ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Erreur de connexion : $e');
+    }
+  }
+
+  // Obtenir le seuil de luminosité actuel
+  Future<double> fetchLightThreshold() async {
+    final response = await http.get(Uri.parse('${AppConfig.apiUrl}/threshold'));
+    if (response.statusCode == 200) {
+      return double.parse(response.body);
+    } else {
+      throw Exception('Failed to fetch light threshold');
+    }
+  }
+
+  double getLightThreshold() {
+    return _lightThreshold;
   }
 
   Future<void> controlLED(String state) async {

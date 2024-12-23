@@ -21,23 +21,20 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _refreshSensorData(); // Récupérer les données au démarrage
-
-    // Initialisez le Timer pour actualiser les données toutes les 10 secondes
+    _sensorDataFuture = _refreshSensorData();
     _timer = Timer.periodic(Duration(seconds: 10), (Timer timer) {
-      _refreshSensorData();
+      setState(() {
+        _sensorDataFuture = _refreshSensorData();
+      });
     });
   }
 
-  Future<void> _refreshSensorData() async {
+  Future<SensorData> _refreshSensorData() async {
     try {
-      final sensorData = await sensorService.fetchSensorData();
-      setState(() {
-        _sensorDataFuture = Future.value(sensorData);
-      });
+      return await sensorService.fetchSensorData();
     } catch (e) {
       print('Erreur lors de la récupération des données : $e');
-      // Gérez l'erreur ici si nécessaire
+      throw e; // Propager l'erreur pour qu'elle soit gérée par le FutureBuilder
     }
   }
 
