@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_esp32_application/services/sensor_service.dart';
 import 'package:intl/intl.dart';
-import 'dart:async'; // Importer dart:async pour utiliser Timer
+import 'dart:async';
 
 class StatisticsPage extends StatefulWidget {
   @override
@@ -13,9 +13,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
   List<Map<String, dynamic>> _temperatureData = [];
   double _averageTemperature = 0.0;
   double _averageLight = 0.0;
-  Timer? _timer; // Déclarez une variable pour le Timer
+  Timer? _timer;
+  final SensorService sensorService = SensorService();
+  final TextEditingController _thresholdController = TextEditingController();
 
-  // Normes pour la serre
   final double minTemperature = 10.0;
   final double maxTemperature = 30.0;
 
@@ -23,12 +24,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
   double maxLight = 800.0;
 
   Future<void> getLightThreshold() async {
-    double lightThreshold = await SensorService().fetchLightThreshold();
-    //debugPrint("AAAAAA $lightThreshold");
-
+    double lightThreshold = await sensorService.fetchLightThreshold();
     setState(() {
-      minLight = lightThreshold * 0.8; // 20% below the threshold
-      maxLight = lightThreshold * 1.2; // 20% above the threshold
+      minLight = lightThreshold * 0.8;
+      maxLight = lightThreshold * 1.2;
     });
   }
 
@@ -37,8 +36,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
     super.initState();
     _fetchRecentTemperatureData();
     getLightThreshold();
-
-    // Démarrez le timer pour actualiser les données toutes les 10 secondes
     _timer = Timer.periodic(Duration(seconds: 10), (Timer timer) {
       _fetchRecentTemperatureData();
     });
@@ -63,7 +60,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
           };
         }).toList();
 
-        // Calculer les moyennes
         if (_temperatureData.isNotEmpty) {
           double totalTemperature = _temperatureData.fold(
               0, (sum, item) => sum + item['temperature']);
@@ -72,7 +68,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
           _averageTemperature = totalTemperature / _temperatureData.length;
           _averageLight = totalLight / _temperatureData.length;
 
-          // Vérifiez si les valeurs sont hors limites et affichez une alerte si nécessaire
           if (_averageTemperature < minTemperature ||
               _averageTemperature > maxTemperature) {
             _showAlertDialog('Alerte Température',
@@ -91,6 +86,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   void _showAlertDialog(String title, String message) {
+    /*
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -114,35 +110,60 @@ class _StatisticsPageState extends State<StatisticsPage> {
         );
       },
     );
-  }
 
+    */
+  }
   @override
   void dispose() {
-    _timer?.cancel(); // Annulez le timer lorsque le widget est détruit
+    _timer?.cancel();
+    _thresholdController.dispose();
     super.dispose();
   }
 
   String formatTimestamp(DateTime timestamp) {
-    return DateFormat('HH:mm').format(timestamp); // Format hh:mm
+    return DateFormat('HH:mm').format(timestamp);
   }
 
   Color getTemperatureColor(double temperature) {
     if (temperature < minTemperature || temperature > maxTemperature) {
-      return Colors.red; // Hors limites
+      return Colors.red;
     } else if (temperature >= minTemperature && temperature <= maxTemperature) {
-      return Colors.green; // Dans la plage acceptable
+      return Colors.green;
     }
-    return Colors.yellow; // Proche de la limite (si nécessaire)
+    return Colors.yellow;
   }
 
   Color getLightColor(double light) {
     getLightThreshold();
     if (light < minLight || light > maxLight) {
-      return Colors.red; // Hors limites
+      return Colors.red;
     } else if (light >= minLight && light <= maxLight) {
-      return Colors.green; // Dans la plage acceptable
+      return Colors.green;
     }
-    return Colors.yellow; // Proche de la limite (si nécessaire)
+    return Colors.yellow;
+  }
+
+  Future<void> _updateLightThreshold() async {
+    final double newThreshold = double.tryParse(_thresholdController.text) ?? 0;
+    if (newThreshold > 0) {
+      try {
+        await sensorService.updateLightThreshold(newThreshold);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Seuil de lumière mis à jour avec succès')),
+        );
+        print('Seuil de lumière mis à jour avec succès: $newThreshold');
+        getLightThreshold();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Erreur lors de la mise à jour du seuil : $e')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Valeur de seuil invalide')),
+      );
+    }
   }
 
   @override
@@ -173,7 +194,32 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     Colors.blue, Icons.wb_sunny),
               ],
             ),
-            SizedBox(height: 40),
+            SizedBox(height: 20),
+            Text(
+              'Mise à jour du seuil de lumière',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _thresholdController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Nouveau seuil de lumière',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: _updateLightThreshold,
+                  child: Text('Mettre à jour'),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
             Text(
               'Visualisation des Valeurs',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -204,11 +250,11 @@ class _StatisticsPageState extends State<StatisticsPage> {
               'Données Collectées',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 5), // Réduction de l'espacement ici
+            SizedBox(height: 5),
             Expanded(
               child: ListView.builder(
                 itemCount: _temperatureData.length,
-                reverse: true, // Ajoutez cette ligne pour inverser l'ordre
+                reverse: true,
                 itemBuilder: (context, index) {
                   final data = _temperatureData[index];
                   return Card(
