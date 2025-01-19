@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_esp32_application/services/sensor_service.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
+import 'data_list_page.dart';
 
 class StatisticsPage extends StatefulWidget {
   @override
@@ -171,112 +172,102 @@ class _StatisticsPageState extends State<StatisticsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Statistiques'),
+        backgroundColor: Colors.green,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Moyennes des dernières minutes',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildAverageCard(
-                    'Température',
-                    '${_averageTemperature.round()} °C',
-                    Colors.red,
-                    Icons.thermostat),
-                _buildAverageCard('Lumière', '${_averageLight.round()} lux',
-                    Colors.blue, Icons.wb_sunny),
-              ],
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Mise à jour du seuil de lumière',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _thresholdController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'Nouveau seuil de lumière',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: _updateLightThreshold,
-                  child: Text('Mettre à jour'),
-                ),
-              ],
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Visualisation des Valeurs',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Column(
-              children: [
-                Text(
-                    'Température actuelle : ${_averageTemperature.toStringAsFixed(1)} °C'),
-                LinearProgressIndicator(
-                  value: (_averageTemperature - minTemperature) /
-                      (maxTemperature - minTemperature),
-                  backgroundColor: Colors.grey[300],
-                  color: getTemperatureColor(_averageTemperature),
-                ),
-                SizedBox(height: 20),
-                Text(
-                    'Lumière actuelle : ${_averageLight.toStringAsFixed(1)} lux'),
-                LinearProgressIndicator(
-                  value: (_averageLight - minLight) / (maxLight - minLight),
-                  backgroundColor: Colors.grey[300],
-                  color: getLightColor(_averageLight),
-                ),
-              ],
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Données Collectées',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 5),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _temperatureData.length,
-                reverse: true,
-                itemBuilder: (context, index) {
-                  final data = _temperatureData[index];
-                  return Card(
-                    elevation: 4,
-                    margin: EdgeInsets.symmetric(vertical: 5),
-                    child: ListTile(
-                      leading: Icon(Icons.data_usage, color: Colors.green),
-                      title: Text('Température : ${data['temperature']} °C'),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Lumière : ${data['light']} lux'),
-                          Text(
-                              'Timestamp : ${formatTimestamp(data['timestamp'])}'),
-                        ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.green[50]!, Colors.green[100]!],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Moyennes des dernières minutes',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildAverageCard(
+                      'Température',
+                      '${_averageTemperature.round()} °C',
+                      Colors.red,
+                      Icons.thermostat),
+                  _buildAverageCard('Lumière', '${_averageLight.round()} lux',
+                      Colors.blue, Icons.wb_sunny),
+                ],
+              ),
+              SizedBox(height: 40),
+              Text(
+                'Mise à jour du seuil de lumière',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _thresholdController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Nouveau seuil de lumière',
+                        border: OutlineInputBorder(),
                       ),
                     ),
+                  ),
+                  SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: _updateLightThreshold,
+                    child: Text('Mettre à jour'),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Visualisation des Valeurs',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              Column(
+                children: [
+                  Text(
+                      'Température actuelle : ${_averageTemperature.toStringAsFixed(1)} °C'),
+                  LinearProgressIndicator(
+                    value: (_averageTemperature - minTemperature) /
+                        (maxTemperature - minTemperature),
+                    backgroundColor: Colors.grey[300],
+                    color: getTemperatureColor(_averageTemperature),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                      'Lumière actuelle : ${_averageLight.toStringAsFixed(1)} lux'),
+                  LinearProgressIndicator(
+                    value: (_averageLight - minLight) / (maxLight - minLight),
+                    backgroundColor: Colors.grey[300],
+                    color: getLightColor(_averageLight),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => DataListPage(_temperatureData)),
                   );
                 },
+                child: Text('Voir toutes les données collectées'),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
