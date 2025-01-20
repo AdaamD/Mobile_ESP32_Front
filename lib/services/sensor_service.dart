@@ -85,6 +85,7 @@ class SensorService {
   Future<double> fetchLightThreshold() async {
     final response = await http.get(Uri.parse('${AppConfig.apiUrl}/threshold'));
     if (response.statusCode == 200) {
+      print('Light threshold: $_lightThreshold');
       return double.parse(response.body);
     } else {
       throw Exception('Failed to fetch light threshold');

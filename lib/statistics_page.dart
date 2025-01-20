@@ -19,17 +19,27 @@ class _StatisticsPageState extends State<StatisticsPage> {
   final SensorService sensorService = SensorService();
   final TextEditingController _thresholdController = TextEditingController();
 
+// Seuils de température et de lumière
   final double minTemperature = 5.0;
   final double maxTemperature = 30.0;
+  final double optimalMinTemperature = 10.0;
+  final double optimalMaxTemperature = 20.0;
 
-  double minLight = 250.0;
-  double maxLight = 800.0;
+  double lightThreshold = 500.0; // Valeur par défaut
+  double minLight = 0.0;
+  double maxLight = 1000.0;
+  double optimalMinLight = 0.0;
+  double optimalMaxLight = 1000.0;
 
+  // Récupère le seuil de lumière depuis Firestore
   Future<void> getLightThreshold() async {
-    double lightThreshold = await sensorService.fetchLightThreshold();
+    double fetchedThreshold = await sensorService.fetchLightThreshold();
     setState(() {
-      minLight = lightThreshold * 0.8;
-      maxLight = lightThreshold * 1.2;
+      lightThreshold = fetchedThreshold;
+      minLight = lightThreshold * 0.5; // 50% en dessous du seuil
+      maxLight = lightThreshold * 1.5; // 50% au-dessus du seuil
+      optimalMinLight = lightThreshold * 0.9; // 10% en dessous du seuil
+      optimalMaxLight = lightThreshold * 1.1; // 10% au-dessus du seuil
     });
   }
 
@@ -38,7 +48,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
     super.initState();
     _fetchRecentTemperatureData();
     getLightThreshold();
-    _timer = Timer.periodic(Duration(seconds: 10), (Timer timer) {
+    _timer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
       _fetchRecentTemperatureData();
     });
   }
@@ -70,20 +80,54 @@ class _StatisticsPageState extends State<StatisticsPage> {
           _averageTemperature = totalTemperature / _temperatureData.length;
           _averageLight = totalLight / _temperatureData.length;
 
+          // Vérification de la température
           if (_averageTemperature < minTemperature ||
               _averageTemperature > maxTemperature) {
             _showAlertDialog('Alerte Température',
                 'La température est hors limites : ${_averageTemperature.round()} °C');
+          } else if (_averageTemperature < optimalMinTemperature ||
+              _averageTemperature > optimalMaxTemperature) {
+            _showAlertDialog('Avertissement Température',
+                'La température n\'est pas optimale : ${_averageTemperature.round()} °C');
           }
-          getLightThreshold();
-          if (_averageLight < minLight || _averageLight > maxLight) {
-            _showAlertDialog('Alerte Lumière',
-                'La lumière est hors limites : ${_averageLight.round()} lux');
-          }
+
+          // Mise à jour et vérification du seuil de lumière
+          getLightThreshold().then((_) {
+            if (_averageLight < minLight || _averageLight > maxLight) {
+              _showAlertDialog('Alerte Lumière',
+                  'La lumière est hors limites : ${_averageLight.round()} lux');
+            } else if (_averageLight < optimalMinLight ||
+                _averageLight > optimalMaxLight) {
+              _showAlertDialog('Avertissement Lumière',
+                  'La lumière n\'est pas optimale : ${_averageLight.round()} lux');
+            }
+          });
         }
       });
     } catch (e) {
       print('Erreur lors de la récupération des données : $e');
+    }
+  }
+
+  // Couleur de la température en fonction de la plage de température
+  Color getTemperatureColor(double temperature) {
+    if (temperature < optimalMinTemperature) {
+      return Colors.yellow; // Trop froid
+    } else if (temperature > optimalMaxTemperature) {
+      return Colors.red; // Trop chaud
+    } else {
+      return Colors.green; // Température optimale
+    }
+  }
+
+// Couleur de la lumière en fonction de la plage de lumière
+  Color getLightColor(double light) {
+    if (light < optimalMinLight) {
+      return Colors.yellow; // Trop sombre
+    } else if (light > optimalMaxLight) {
+      return Colors.red; // Trop lumineux
+    } else {
+      return Colors.green; // Lumière optimale
     }
   }
 
@@ -124,25 +168,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
   String formatTimestamp(DateTime timestamp) {
     return DateFormat('HH:mm').format(timestamp);
-  }
-
-  Color getTemperatureColor(double temperature) {
-    if (temperature < minTemperature || temperature > maxTemperature) {
-      return Colors.red;
-    } else if (temperature >= minTemperature && temperature <= maxTemperature) {
-      return Colors.green;
-    }
-    return Colors.yellow;
-  }
-
-  Color getLightColor(double light) {
-    getLightThreshold();
-    if (light < minLight || light > maxLight) {
-      return Colors.red;
-    } else if (light >= minLight && light <= maxLight) {
-      return Colors.green;
-    }
-    return Colors.yellow;
   }
 
   Future<void> _updateLightThreshold() async {
