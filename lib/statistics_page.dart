@@ -19,7 +19,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   final SensorService sensorService = SensorService();
   final TextEditingController _thresholdController = TextEditingController();
 
-  final double minTemperature = 10.0;
+  final double minTemperature = 5.0;
   final double maxTemperature = 30.0;
 
   double minLight = 250.0;
