@@ -4,6 +4,7 @@ import 'package:flutter_esp32_application/services/sensor_service.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'data_list_page.dart';
+import 'colors.dart';
 
 class StatisticsPage extends StatefulWidget {
   @override
@@ -170,101 +171,262 @@ class _StatisticsPageState extends State<StatisticsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Statistiques'),
-        backgroundColor: Colors.green,
+      body: CustomScrollView(
+        slivers: <Widget>[
+          SliverAppBar(
+            expandedHeight: 100.0,
+            floating: false,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20.0, // Padding de 10 pixels à gauche et à droite
+                ),
+                child: Text(
+                  'Vue Statistique',
+                  style: TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        offset: Offset(2, 2),
+                        blurRadius: 3,
+                        color: Colors.black26,
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              background: Image.asset(
+                'assets/images/semi-greenhouse.png',
+                fit: BoxFit.cover,
+              ),
+            ),
+            leading: IconButton(
+              icon: Icon(
+                Icons.arrow_back,
+                color: Colors.white,
+                size: 30.0,
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              padding: EdgeInsets.all(
+                  8), // Ajouter un padding pour donner plus d'espace autour de l'icône
+              splashColor: Colors.black12, // Couleur de l'effet de splash
+              highlightColor: Colors
+                  .transparent, // Supprimer l'effet de surbrillance par défaut
+            ),
+          ),
+          SliverList(
+            delegate: SliverChildListDelegate(
+              [
+                Container(
+                  color: AppColors.backgroundColor, // Fond de la page
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 30),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildAverageCard(
+                              title: 'Température',
+                              value: '${_averageTemperature.round()} °C',
+                              color: Colors.redAccent.shade200,
+                              icon: Icons.thermostat,
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: _buildAverageCard(
+                              title: 'Lumière',
+                              value: '${_averageLight.round()} lux',
+                              color: Colors.amber.shade600,
+                              icon: Icons.wb_sunny,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 40),
+                      // Visualisation des valeurs
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Visualisation des Valeurs',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                                shadows: [
+                                  Shadow(
+                                    offset: Offset(1, 1),
+                                    blurRadius: 3,
+                                    color: Colors.black26,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            _buildProgressIndicatorWithLabel(
+                              label: 'Température actuelle',
+                              value: _averageTemperature,
+                              min: minTemperature,
+                              max: maxTemperature,
+                              color: getTemperatureColor(_averageTemperature),
+                            ),
+                            const SizedBox(height: 30),
+                            _buildProgressIndicatorWithLabel(
+                              label: 'Lumière actuelle',
+                              value: _averageLight,
+                              min: minLight,
+                              max: maxLight,
+                              color: getLightColor(_averageLight),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      _buildThresholdUpdateSection(),
+                      const SizedBox(height: 40),
+                      Center(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    DataListPage(_temperatureData),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.storage_rounded,
+                            color: Colors.white,
+                          ),
+                          label: const Text(
+                            'Voir toutes les données',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 16, horizontal: 24),
+                            textStyle: const TextStyle(fontSize: 18),
+                            backgroundColor: AppColors.accentColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 6,
+                            shadowColor: Colors.black38,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-      body: Container(
+    );
+  }
+
+  // Paramètres pour la carte de statistiques
+  Widget _buildAverageCard({
+    required String title,
+    required String value,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Card(
+      elevation: 6, // Augmentation de l'élévation pour un effet plus marqué
+      shadowColor: Colors.black26, // Couleur de l'ombre
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15), // Coins arrondis
+      ),
+      child: Container(
         decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: Colors.black.withOpacity(0.2), // Bordure noire très fine
+            width: 1, // Très fine
+          ),
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.green[50]!, Colors.green[100]!],
+            colors: [
+              color.withOpacity(0.1), // Couleur principale atténuée
+              color.withOpacity(0.05), // Couleur plus douce
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2), // Fond léger pour l'icône
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(12),
+                child: Icon(
+                  icon,
+                  size: 50,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 10),
               Text(
-                'Moyennes des dernières minutes',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildAverageCard(
-                      'Température',
-                      '${_averageTemperature.round()} °C',
-                      Colors.red,
-                      Icons.thermostat),
-                  _buildAverageCard('Lumière', '${_averageLight.round()} lux',
-                      Colors.blue, Icons.wb_sunny),
-                ],
-              ),
-              SizedBox(height: 40),
-              Text(
-                'Mise à jour du seuil de lumière',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _thresholdController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: 'Nouveau seuil de lumière',
-                        border: OutlineInputBorder(),
-                      ),
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.accentColor, // Accent contrastant
+                  shadows: [
+                    Shadow(
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                      color: Colors.black26,
                     ),
-                  ),
-                  SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: _updateLightThreshold,
-                    child: Text('Mettre à jour'),
-                  ),
-                ],
+                  ],
+                ),
+                textAlign: TextAlign.center,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 10),
               Text(
-                'Visualisation des Valeurs',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-              Column(
-                children: [
-                  Text(
-                      'Température actuelle : ${_averageTemperature.toStringAsFixed(1)} °C'),
-                  LinearProgressIndicator(
-                    value: (_averageTemperature - minTemperature) /
-                        (maxTemperature - minTemperature),
-                    backgroundColor: Colors.grey[300],
-                    color: getTemperatureColor(_averageTemperature),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                      'Lumière actuelle : ${_averageLight.toStringAsFixed(1)} lux'),
-                  LinearProgressIndicator(
-                    value: (_averageLight - minLight) / (maxLight - minLight),
-                    backgroundColor: Colors.grey[300],
-                    color: getLightColor(_averageLight),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => DataListPage(_temperatureData)),
-                  );
-                },
-                child: Text('Voir toutes les données collectées'),
+                value,
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                  shadows: [
+                    Shadow(
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                      color: Colors.black26,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -273,27 +435,208 @@ class _StatisticsPageState extends State<StatisticsPage> {
     );
   }
 
-  Widget _buildAverageCard(
-      String title, String value, Color color, IconData icon) {
+// Crée un indicateur de progression avec une étiquette
+  Widget _buildProgressIndicatorWithLabel({
+    required String label,
+    required double value,
+    required double min,
+    required double max,
+    required Color color,
+  }) {
+    // Ajout des unités statiques pour les labels spécifiques
+    String unit = '';
+    if (label.contains('Température')) {
+      unit = '°C';
+    } else if (label.contains('Lumière')) {
+      unit = 'lux';
+    }
+
     return Container(
-      width: MediaQuery.of(context).size.width * 0.4,
+      padding: const EdgeInsets.all(16), // Espacement interne
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: Colors.white
+            .withOpacity(0.85), // Fond blanc cassé légèrement transparent
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: color, width: 2),
-      ),
-      padding: EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 40, color: color),
-          SizedBox(height: 8),
-          Text(title,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text(value,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26, // Ombre douce et subtile
+            blurRadius: 12, // Flou légèrement plus grand
+            offset: const Offset(0, 6), // Décalage pour un effet plus dynamique
+          ),
         ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 0, 0, 0), // Couleur contrastée
+                  shadows: [
+                    Shadow(
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                      color: Colors.black26,
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  Text(
+                    '${value.toStringAsFixed(1)} $unit', // Affiche la valeur avec l'unité appropriée
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                      shadows: [
+                        Shadow(
+                          offset: Offset(1, 1),
+                          blurRadius: 2,
+                          color: Colors.black26,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8), // Espacement réduit entre texte et barre
+          ClipRRect(
+            borderRadius:
+                BorderRadius.circular(6), // Arrondi du fond de la barre
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: color.withOpacity(
+                      0.2), // Subtilement assorti à la couleur principale
+                  width: 1, // Largeur de la bordure
+                ),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: LinearProgressIndicator(
+                value: (value - min) / (max - min),
+                backgroundColor: Colors.grey[300], // Fond de la barre
+                color: color, // Couleur principale
+                minHeight:
+                    16, // Hauteur plus grande pour une meilleure visibilité
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThresholdUpdateSection() {
+    return Card(
+      elevation: 4, // Ajoute une légère ombre
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      color: Colors.white.withOpacity(0.85),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Titre avec icône, taille et style améliorés
+            Row(
+              children: [
+                Icon(Icons.tune,
+                    color: AppColors.accentColor,
+                    size: 32), // Icône plus grande
+                const SizedBox(width: 10),
+                Text(
+                  'Mettre à jour le seuil',
+                  style: TextStyle(
+                    fontSize:
+                        26, // Augmente la taille du texte pour une meilleure visibilité
+                    fontWeight: FontWeight
+                        .w600, // Rendre le texte plus audacieux mais sans trop d'ombre
+                    color: AppColors.accentColor,
+                    shadows: [
+                      Shadow(
+                        offset: Offset(1.0, 1.0),
+                        blurRadius: 2.0, // Ombre plus légère
+                        color:
+                            Color.fromARGB(100, 0, 0, 0), // Ombre plus subtile
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Champ de texte avec bords arrondis et ombrage doux
+            TextField(
+              controller: _thresholdController,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              decoration: InputDecoration(
+                contentPadding: EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal:
+                        20), // Ajout de padding interne pour plus de confort
+                prefixIcon: const Icon(Icons.edit,
+                    color: AppColors.accentColor,
+                    size: 24), // Icône plus grande
+                hintText: 'Nouvelle valeur',
+                hintStyle: TextStyle(
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.bold), // Police plus grasse
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15), // Bords arrondis
+                  borderSide: BorderSide(
+                      color: AppColors.accentColor,
+                      width: 1), // Bordure plus douce
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                      15), // Bords arrondis aussi quand focus
+                  borderSide: BorderSide(
+                      color: AppColors.accentColor, width: 2), // Bordure focus
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                      15), // Bords arrondis également pour état désactivé
+                  borderSide: BorderSide(
+                      color: AppColors.accentColor.withOpacity(0.4), width: 1),
+                ),
+                filled: true,
+                fillColor: Colors.white
+                    .withOpacity(0.7), // Remplissage de fond légèrement blanc
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Bouton pour appliquer la mise à jour
+            ElevatedButton(
+              onPressed: _updateLightThreshold,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accentColor,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                textStyle: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold), // Bouton plus gras
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Appliquer'),
+            ),
+          ],
+        ),
       ),
     );
   }
