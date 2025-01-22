@@ -53,6 +53,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
     });
   }
 
+// Requête Firestore pour récupérer les données de température récentes
   Future<void> _fetchRecentTemperatureData() async {
     final lastTwoMinutes = DateTime.now().subtract(Duration(minutes: 2));
 
@@ -85,22 +86,22 @@ class _StatisticsPageState extends State<StatisticsPage> {
               _averageTemperature > maxTemperature) {
             _showAlertDialog('Alerte Température',
                 'La température est hors limites : ${_averageTemperature.round()} °C');
-          } else if (_averageTemperature < optimalMinTemperature ||
+          } /* else if (_averageTemperature < optimalMinTemperature ||
               _averageTemperature > optimalMaxTemperature) {
             _showAlertDialog('Avertissement Température',
                 'La température n\'est pas optimale : ${_averageTemperature.round()} °C');
-          }
+          }*/
 
           // Mise à jour et vérification du seuil de lumière
           getLightThreshold().then((_) {
             if (_averageLight < minLight || _averageLight > maxLight) {
               _showAlertDialog('Alerte Lumière',
                   'La lumière est hors limites : ${_averageLight.round()} lux');
-            } else if (_averageLight < optimalMinLight ||
+            } /*else if (_averageLight < optimalMinLight ||
                 _averageLight > optimalMaxLight) {
               _showAlertDialog('Avertissement Lumière',
                   'La lumière n\'est pas optimale : ${_averageLight.round()} lux');
-            }
+            }*/
           });
         }
       });
@@ -112,34 +113,36 @@ class _StatisticsPageState extends State<StatisticsPage> {
   // Couleur de la température en fonction de la plage de température
   Color getTemperatureColor(double temperature) {
     if (temperature < optimalMinTemperature) {
-      return Colors.yellow; // Trop froid
+      return AppColors.lowTemperatureColor; // Trop froid
     } else if (temperature > optimalMaxTemperature) {
-      return Colors.red; // Trop chaud
+      return AppColors.highTemperatureColor; // Trop chaud
     } else {
-      return Colors.green; // Température optimale
+      return AppColors.normalTemperatureColor; // Température optimale
     }
   }
 
 // Couleur de la lumière en fonction de la plage de lumière
   Color getLightColor(double light) {
     if (light < optimalMinLight) {
-      return Colors.yellow; // Trop sombre
+      return AppColors.lowTemperatureColor; // Trop sombre
     } else if (light > optimalMaxLight) {
-      return Colors.red; // Trop lumineux
+      return AppColors.highTemperatureColor; // Trop lumineux
     } else {
-      return Colors.green; // Lumière optimale
+      return AppColors.normalTemperatureColor; // Lumière optimale
     }
   }
 
+// Affiche une boîte de dialogue d'alerte
   void _showAlertDialog(String title, String message) {
-    /*
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Row(
             children: [
-              Icon(Icons.warning, color: Colors.red), // Icône d'avertissement
+              Icon(Icons.warning,
+                  color:
+                      AppColors.highTemperatureColor), // Icône d'avertissement
               SizedBox(width: 8),
               Text(title),
             ],
@@ -156,9 +159,9 @@ class _StatisticsPageState extends State<StatisticsPage> {
         );
       },
     );
-
-    */
   }
+
+// Annule le minuteur lors de la fermeture de la page
   @override
   void dispose() {
     _timer?.cancel();
@@ -166,10 +169,12 @@ class _StatisticsPageState extends State<StatisticsPage> {
     super.dispose();
   }
 
+// Formate le timestamp en heure et minute
   String formatTimestamp(DateTime timestamp) {
     return DateFormat('HH:mm').format(timestamp);
   }
 
+// Met à jour le seuil de lumière
   Future<void> _updateLightThreshold() async {
     final double newThreshold = double.tryParse(_thresholdController.text) ?? 0;
     if (newThreshold > 0) {
@@ -560,6 +565,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
     );
   }
 
+// Crée la section de mise à jour du seuil
   Widget _buildThresholdUpdateSection() {
     return Card(
       elevation: 4, // Ajoute une légère ombre

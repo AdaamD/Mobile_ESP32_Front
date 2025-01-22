@@ -92,10 +92,12 @@ class SensorService {
     }
   }
 
+// Obtenir le seuil de luminosité actuel
   double getLightThreshold() {
     return _lightThreshold;
   }
 
+// Contrôle de la LED
   Future<void> controlLED(String state) async {
     final response = await http.post(
       Uri.parse('${AppConfig.apiUrl}/led'),
@@ -110,6 +112,7 @@ class SensorService {
     }
   }
 
+// Envoi de messages
   Future<void> sendMessage(String message) async {
     final response = await http.post(
       Uri.parse('${AppConfig.apiUrl}/post?message=$message'),

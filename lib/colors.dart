@@ -7,4 +7,8 @@ class AppColors {
   static const Color backgroundColor =
       Color(0xFFf5f5f5); // Couleur de fond claire
   static const Color textColor = Color(0xFF41513f); // Texte foncé
+
+  static const Color lowTemperatureColor = Colors.yellow; // Trop froid
+  static const Color highTemperatureColor = Colors.red; // Trop chaud
+  static const Color normalTemperatureColor = Colors.green; // Normale
 }

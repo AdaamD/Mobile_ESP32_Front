@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'widgets/sensor_display.dart';
-import 'widgets/led_control.dart';
+//import 'widgets/sensor_display.dart';
+//import 'widgets/led_control.dart';
 import 'models/sensor_data.dart';
 import 'statistics_page.dart';
 import '../colors.dart';
@@ -30,6 +30,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+// Fonction pour rafraîchir les données du capteur
   Future<SensorData> _refreshSensorData() async {
     try {
       return await sensorService.fetchSensorData();
@@ -39,12 +40,14 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+// Annulez le Timer lorsque l'état est détruit
   @override
   void dispose() {
     _timer?.cancel(); // Annulez le Timer lorsque l'état est détruit
     super.dispose();
   }
 
+// Fonction pour contrôler la LED
   Future<void> controlLED(String state) async {
     try {
       await sensorService.controlLED(state);
@@ -59,6 +62,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // Fonction pour envoyer un message
   Future<void> sendMessage(String message) async {
     try {
       await sensorService.sendMessage(message);
@@ -359,6 +363,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+// Widget pour contrôler la LED
   Widget _buildLEDControl(
       String label, IconData icon, VoidCallback onPressed, Color iconColor,
       {Color? labelColor}) {
@@ -395,6 +400,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+// Widget pour envoyer un message
   Widget _buildMessageCard() {
     final TextEditingController _messageController = TextEditingController();
 

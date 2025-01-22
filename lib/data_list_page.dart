@@ -116,6 +116,7 @@ class DataListPage extends StatelessWidget {
     );
   }
 
+// Construit une ligne de données
   Widget _buildDataRow(IconData icon, String label, String value, Color color) {
     return Row(
       children: [
@@ -140,6 +141,7 @@ class DataListPage extends StatelessWidget {
     );
   }
 
+// Formate le timestamp
   String formatTimestamp(DateTime timestamp) {
     return DateFormat('dd/MM/yyyy HH:mm').format(timestamp);
   }
